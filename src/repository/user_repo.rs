@@ -1,8 +1,6 @@
-use mongodb::bson::{doc, Uuid};
+use mongodb::bson::doc;
 use mongodb::bson::oid::ObjectId;
 use mongodb::Collection;
-use mongodb::error::Error;
-use mongodb::results::InsertOneResult;
 use crate::models::User;
 
 
@@ -17,13 +15,51 @@ impl UserRepo {
         }
     }
 
-    pub async fn create_user(&self, user: &mut User) -> Result<InsertOneResult, Error> {
-        self.collection.insert_one(user, None).await
+    async fn create_user(&self, user: &mut User) -> Result<ObjectId, &str> {
+        match self.collection.insert_one(user, None).await {
+            Ok(result) => {
+                Ok(result.inserted_id.as_object_id().unwrap())
+            }
+            Err(_) => {
+                Err("Failed to create user")
+            }
+        }
     }
 
-    pub async fn get_user(&self, user_id: ObjectId) -> Result<Option<User>, Error> {
+    pub async fn get_user(&self, user_id: &ObjectId) -> Result<Option<User>, &str> {
         let filter = doc! {"_id": user_id};
         println!("{:#?}", filter);
-        self.collection.find_one(filter, None).await
+        match self.collection.find_one(filter, None).await {
+            Ok(user) => {
+                Ok(user)
+            }
+            Err(_) => {
+                Err("Failed to get user")
+            }
+        }
+    }
+
+    pub async fn save_user(&self, user: &mut User) -> Result<ObjectId, &str> {
+        if let Some(user_id) = user.id() {
+            let filter = doc! {"_id": user_id};
+            let update = doc! {
+                "$set": {
+                    "login": user.login(),
+                    "email": user.email(),
+                    "firstname": user.firstname(),
+                    "lastname": user.lastname(),
+                }
+            };
+            match self.collection.update_one(filter, update, None).await {
+                Ok(result) => {
+                    Ok(result.upserted_id.unwrap().as_object_id().unwrap())
+                }
+                Err(_) => {
+                    Err("Failed to update user")
+                }
+            }
+        } else {
+            self.create_user(user).await
+        }
     }
 }

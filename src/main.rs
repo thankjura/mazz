@@ -1,12 +1,14 @@
 use mongodb::Client;
 use rocket::routes;
 use crate::repository::UserRepo;
-use crate::system::startup::cli::parse_options;
+use crate::core::system::startup::cli::parse_options;
+use crate::managers::UserManager;
 
 mod models;
 mod handlers;
-mod system;
 mod repository;
+mod managers;
+mod core;
 
 
 #[rocket::main]
@@ -22,10 +24,11 @@ async fn main() -> Result<(), rocket::Error> {
     let db = db_client.database(&options.db_name);
 
     let user_repo = UserRepo::new(&db);
+    let user_manager = UserManager::new(user_repo);
 
     let _rocket = rocket::custom(figment)
-        .manage(user_repo)
-        .mount("/", routes![handlers::index])
+        .manage(user_manager)
+        .mount("/", routes![handlers::get_user])
         .ignite().await?
         .launch().await?;
 

@@ -1,3 +1,3 @@
 mod user;
 
-pub use user::index;
+pub use user::get_user;
