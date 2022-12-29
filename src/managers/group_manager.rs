@@ -1,29 +1,37 @@
 use mongodb::bson::oid::ObjectId;
-use crate::models::User;
-use crate::repository::UserRepo;
+use crate::models::Group;
+use crate::core::db::repository::GroupRepo;
 
-pub struct UserManager {
-    user_repo: UserRepo
+pub struct GroupManager {
+    group_repo: GroupRepo
 }
 
-impl UserManager {
-    pub(crate) fn new(user_repo: UserRepo) -> Self {
+impl GroupManager {
+    pub(crate) async fn new(database: &mongodb::Database) -> Self {
+        let repo = GroupRepo::new(database).await;
         Self {
-            user_repo
+            group_repo: repo
         }
     }
 
-    pub async fn save_user(&self, user: &mut User) {
-        if let Ok(user_id) = self.user_repo.save_user(user).await {
-            user.id.replace(user_id);
+    pub async fn create_group(&self, name: &str) -> Option<ObjectId> {
+        if let Ok(group_id) = self.group_repo.create_group(name).await {
+            return Some(group_id);
         }
+        None
     }
 
-    pub async fn get_user(&self, user_id: &ObjectId) -> Option<User> {
-        if let Ok(user) = self.user_repo.get_user(user_id).await {
-            return user;
+    pub async fn get_group(&self, name: &str) -> Option<Group> {
+        if let Ok(group) = self.group_repo.get_group(name).await {
+            return group;
         }
 
         None
+    }
+
+    pub async fn delete_group(&self, name: &str) {
+        if let Err(res) = self.group_repo.delete_group(name).await {
+            println!("{}", res)
+        }
     }
 }

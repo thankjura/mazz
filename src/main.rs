@@ -1,12 +1,10 @@
 use mongodb::Client;
 use rocket::routes;
-use crate::repository::UserRepo;
 use crate::core::system::startup::cli::parse_options;
-use crate::managers::UserManager;
+use crate::managers::{GroupManager, UserManager};
 
 mod models;
 mod handlers;
-mod repository;
 mod managers;
 mod core;
 
@@ -23,12 +21,13 @@ async fn main() -> Result<(), rocket::Error> {
         .await.expect("Can't connect to database");
     let db = db_client.database(&options.db_name);
 
-    let user_repo = UserRepo::new(&db);
-    let user_manager = UserManager::new(user_repo);
+    let user_manager = UserManager::new(&db).await;
+    let group_manager = GroupManager::new(&db).await;
 
     let _rocket = rocket::custom(figment)
         .manage(user_manager)
-        .mount("/", routes![handlers::get_user])
+        .manage(group_manager)
+        .mount("/api/user", handlers::user_routes())
         .ignite().await?
         .launch().await?;
 

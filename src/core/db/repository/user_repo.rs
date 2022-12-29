@@ -1,6 +1,7 @@
 use mongodb::bson::doc;
 use mongodb::bson::oid::ObjectId;
 use mongodb::Collection;
+use crate::core::db::make_indexes;
 use crate::models::User;
 
 
@@ -9,9 +10,17 @@ pub struct UserRepo {
 }
 
 impl UserRepo {
-    pub fn new(database: &mongodb::Database) -> Self {
+    pub(crate) async fn new(database: &mongodb::Database) -> Self {
+        let collection = database.collection("users");
+
+        let indexes = vec![
+            doc! { "login": 1 },
+            doc! { "email": 1 },
+        ];
+        make_indexes(&collection, indexes).await;
+
         Self {
-            collection: database.collection("users")
+            collection
         }
     }
 
@@ -49,9 +58,13 @@ impl UserRepo {
                     "lastname": user.lastname(),
                 }
             };
-            match self.collection.update_one(filter, update, None).await {
+            return match self.collection.update_one(filter, update, None).await {
                 Ok(result) => {
-                    Ok(result.upserted_id.unwrap().as_object_id().unwrap())
+                    if let Some(Some(res)) = result.upserted_id.map(|s| s.as_object_id()) {
+                        Ok(res)
+                    } else {
+                        Ok(user_id.clone())
+                    }
                 }
                 Err(_) => {
                     Err("Failed to update user")
@@ -62,18 +75,15 @@ impl UserRepo {
         }
     }
 
-    pub async fn delete_user(&self, user: User) -> Result<u64, &str> {
-        if let Some(user_id) = user.id() {
-            let filter = doc! {"_id": user_id};
-            return match self.collection.delete_one(filter, None).await {
-                Ok(result) => {
-                    Ok(result.deleted_count)
-                }
-                Err(_) => {
-                    Err("Failed to delete user")
-                }
+    pub async fn delete_user(&self, user_id: &ObjectId) -> Result<u64, &str> {
+        let filter = doc! {"_id": user_id};
+        return match self.collection.delete_one(filter, None).await {
+            Ok(result) => {
+                Ok(result.deleted_count)
+            }
+            Err(_) => {
+                Err("Failed to delete user")
             }
         }
-        Ok(0)
     }
 }

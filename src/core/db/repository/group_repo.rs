@@ -1,17 +1,25 @@
 use mongodb::bson::doc;
 use mongodb::bson::oid::ObjectId;
 use mongodb::Collection;
+use crate::core::db::make_indexes;
 use crate::models::Group;
 
 
 pub struct GroupRepo {
-    collection: Collection<Group>
+    collection: Collection<Group>,
 }
 
 impl GroupRepo {
-    pub fn new(database: &mongodb::Database) -> Self {
+    pub(crate) async fn new(database: &mongodb::Database) -> Self {
+        let indexes = vec![
+            doc! { "name": 1 }
+        ];
+        let collection = database.collection("groups");
+
+        make_indexes(&collection, indexes).await;
+
         Self {
-            collection: database.collection("groups")
+            collection
         }
     }
 
