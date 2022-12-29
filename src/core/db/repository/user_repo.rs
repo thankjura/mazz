@@ -28,7 +28,6 @@ impl UserRepo {
 
     pub async fn get_user(&self, user_id: &ObjectId) -> Result<Option<User>, &str> {
         let filter = doc! {"_id": user_id};
-        println!("{:#?}", filter);
         match self.collection.find_one(filter, None).await {
             Ok(user) => {
                 Ok(user)
@@ -61,5 +60,20 @@ impl UserRepo {
         } else {
             self.create_user(user).await
         }
+    }
+
+    pub async fn delete_user(&self, user: User) -> Result<u64, &str> {
+        if let Some(user_id) = user.id() {
+            let filter = doc! {"_id": user_id};
+            return match self.collection.delete_one(filter, None).await {
+                Ok(result) => {
+                    Ok(result.deleted_count)
+                }
+                Err(_) => {
+                    Err("Failed to delete user")
+                }
+            }
+        }
+        Ok(0)
     }
 }
