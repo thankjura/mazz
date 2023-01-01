@@ -985,6 +985,7 @@ name = "mazz"
 version = "0.1.0"
 dependencies = [
  "argparse",
+ "lazy_static",
  "mongodb",
  "rocket",
  "serde",

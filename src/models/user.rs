@@ -31,8 +31,4 @@ impl User {
     pub fn lastname(&self) -> Option<&str> {
         self.lastname.as_deref()
     }
-
-    pub fn editable_field() -> Vec<&'static str> {
-        vec!["firstname", "lastname", "email"]
-    }
 }
