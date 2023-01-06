@@ -9,6 +9,7 @@ edition = "2021"
 argparse = "0.2.2"
 lazy_static = "1.4.0"
 mongodb = "2.3.1"
+regex = "1.7.0"
 rocket = { version = "0.5.0-rc.2", features = ["json", "secrets", "uuid"] }
 serde = { version = "1.0.152", features = ["derive"] }
 serde_json = "1.0.91"

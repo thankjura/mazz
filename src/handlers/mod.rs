@@ -2,6 +2,7 @@ use rocket::{Route, routes};
 
 mod user;
 mod customfield;
+mod project;
 
 pub fn user_routes() -> Vec<Route> {
     routes![
@@ -18,5 +19,14 @@ pub fn customfield_routes() -> Vec<Route> {
         customfield::create_customfield,
         customfield::patch_customfield,
         customfield::delete_customfield,
+    ]
+}
+
+pub fn project_routes() -> Vec<Route> {
+    routes![
+        project::get_project,
+        project::create_project,
+        project::patch_project,
+        project::delete_project,
     ]
 }
